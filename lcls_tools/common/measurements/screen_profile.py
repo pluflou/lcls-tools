@@ -1,7 +1,7 @@
 from lcls_tools.common.devices.screen import Screen
 from lcls_tools.common.image.fit import ImageProjectionFit, ImageFit
 from lcls_tools.common.measurements.measurement import Measurement
-from pydantic import ConfigDict, SerializeAsAny
+from pydantic import ConfigDict, SerializeAsAny, field_serializer, field_validator
 
 
 class ScreenBeamProfileMeasurement(Measurement):
@@ -23,10 +23,21 @@ class ScreenBeamProfileMeasurement(Measurement):
     #TODO: return images flag
     """
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    name: str = "beam_profile"
     device: SerializeAsAny[Screen]
     beam_fit: SerializeAsAny[ImageFit] = ImageProjectionFit()
     fit_profile: bool = True
+
+    @field_serializer("beam_fit")
+    def ser_fld(self, ele, _info):
+        return {"type": ele.__class__.__name__} | ele.model_dump()
+
+    @field_validator("beam_fit", mode="before")
+    def validate_beam_fit(cls, v, info):
+        if isinstance(v, ImageFit):
+            return v
+        elif isinstance(v, dict):
+            class_ = globals()[v.pop("type")]
+            return class_(**v)
 
     def measure(self, n_shots: int = 1) -> dict:
         """

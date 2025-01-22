@@ -112,53 +112,59 @@ class EmittanceMeasurementTest(TestCase):
 
     def test_serialization(self):
         info = """  
-        OTR11:
+        screens:
+          YAG01:
             controls_information:
               PVs:
-                image: OTRS:LI21:237:IMAGE
-                n_bits: OTRS:LI21:237:N_OF_BITS
-                n_col: OTRS:LI21:237:N_OF_COL
-                n_row: OTRS:LI21:237:N_OF_ROW
-                resolution: OTRS:LI21:237:RESOLUTION
-              control_name: OTRS:LI21:237
+                image: YAGS:IN20:211:IMAGE
+                n_bits: YAGS:IN20:211:N_OF_BITS
+                n_col: YAGS:IN20:211:N_OF_COL
+                n_row: YAGS:IN20:211:N_OF_ROW
+                resolution: YAGS:IN20:211:RESOLUTION
+              control_name: YAGS:IN20:211
             metadata:
-              area: BC1
+              area: GUN
               beam_path:
               - CU_ALINE
+              - CU_GSPEC
               - CU_HTXI
               - CU_HXR
               - CU_HXTES
               - CU_SFTH
+              - CU_SPEC
               - CU_SXR
-              sum_l_meters: 34.834
+              sum_l_meters: 0.614
               type: PROF
-        CQ11:
+        magnets:
+          CQ01:
             controls_information:
               PVs:
-                bact: QUAD:LI21:221:BACT
-                bcon: QUAD:LI21:221:BCON
-                bctrl: QUAD:LI21:221:BCTRL
-                bdes: QUAD:LI21:221:BDES
-                bmax: QUAD:LI21:221:BMAX
-                bmin: QUAD:LI21:221:BMIN
-                ctrl: QUAD:LI21:221:CTRL
-              control_name: QUAD:LI21:221
+                bact: QUAD:IN20:121:BACT
+                bcon: QUAD:IN20:121:BCON
+                bctrl: QUAD:IN20:121:BCTRL
+                bdes: QUAD:IN20:121:BDES
+                bmax: QUAD:IN20:121:BMAX
+                bmin: QUAD:IN20:121:BMIN
+                ctrl: QUAD:IN20:121:CTRL
+              control_name: QUAD:IN20:121
             metadata:
-              area: BC1
+              area: GUN
               beam_path:
               - CU_ALINE
+              - CU_GSPEC
               - CU_HTXI
               - CU_HXR
               - CU_HXTES
               - CU_SFTH
+              - CU_SPEC
               - CU_SXR
-              l_eff: 0.108
-              sum_l_meters: 31.89
+              l_eff: 0.0
+              sum_l_meters: 0.196
               type: QUAD
         """
         config = yaml.safe_load(info)
-        screen = Screen.model_validate(config["OTR11"])
-        magnet = Magnet.model_validate(config["CQ11"])
+        screen = Screen.model_validate(config["screens"]["YAG01"] | {"name": "YAG01"})
+        magnet = Magnet.model_validate(config["magnets"]["CQ01"] | {"name": "CQ01"})
 
         beamsize_measurement = ScreenBeamProfileMeasurement(device=screen)
 
@@ -181,20 +187,28 @@ class EmittanceMeasurementTest(TestCase):
             design_twiss=design_twiss,
             wait_time=1e-3,
         )
-
-        # check to make sure info is in serialized dump
         quad_scan_dump = json.loads(quad_scan.model_dump_json())
-        assert quad_scan_dump["scan_values"] == k.tolist()
-        assert quad_scan_dump["magnet"]["controls_information"]["PVs"]["bctrl"] == \
-               "QUAD:LI21:221:BCTRL"
-        assert quad_scan_dump["beamsize_measurement"]["device"][
-            "controls_information"]["PVs"]["image"] == "OTRS:LI21:237:IMAGE"
-        assert "image_processor" in quad_scan_dump["beamsize_measurement"]["beam_fit"]
-        assert quad_scan_dump["rmat"] == [
-            [[1.0, 1.0], [0.0, 1.0]], [[1.0, 1.0], [0.0, 1.0]]
-        ]
-
         with open('data.yml', 'w') as outfile:
             yaml.dump(quad_scan_dump, outfile, default_flow_style=False)
+
+        # recreate the QuadScanEmittance object from the dump info
+        recreated_quad_scan = QuadScanEmittance.model_validate(quad_scan_dump)
+        recreated_quad_scan_dump = json.loads(recreated_quad_scan.model_dump_json())
+
+        for ele in [quad_scan_dump, recreated_quad_scan_dump]:
+            # check to make sure info is in serialized dump
+            assert ele["scan_values"] == k.tolist()
+            assert ele["magnet"]["controls_information"]["PVs"]["bctrl"] == \
+                   "QUAD:IN20:121:BCTRL"
+            assert ele["beamsize_measurement"]["device"][
+                       "controls_information"]["PVs"]["image"] == "YAGS:IN20:211:IMAGE"
+            assert "image_processor" in ele["beamsize_measurement"][
+                "beam_fit"]
+            assert ele["rmat"] == [
+                [[1.0, 1.0], [0.0, 1.0]], [[1.0, 1.0], [0.0, 1.0]]
+            ]
+
+
+
 
 
