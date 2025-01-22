@@ -3,7 +3,8 @@ from typing import Optional
 
 import numpy as np
 from numpy import ndarray
-from pydantic import ConfigDict, PositiveInt, field_validator, PositiveFloat
+from pydantic import ConfigDict, PositiveInt, field_validator, PositiveFloat, \
+    SerializeAsAny, field_serializer
 
 from lcls_tools.common.data.emittance import compute_emit_bmag
 from lcls_tools.common.data.model_general_calcs import bdes_to_kmod, get_optics
@@ -59,8 +60,8 @@ class QuadScanEmittance(Measurement):
     """
     energy: float
     scan_values: list[float]
-    magnet: Magnet
-    beamsize_measurement: Measurement
+    magnet: SerializeAsAny[Magnet]
+    beamsize_measurement: SerializeAsAny[Measurement]
     n_measurement_shots: PositiveInt = 1
 
     rmat: Optional[ndarray] = None
@@ -76,6 +77,10 @@ class QuadScanEmittance(Measurement):
     def validate_rmat(cls, v, info):
         assert v.shape == (2, 2, 2)
         return v
+
+    @field_serializer("rmat")
+    def rmat_to_list(self, val, _info):
+        return val.tolist()
 
     def measure(self):
         """
@@ -93,6 +98,7 @@ class QuadScanEmittance(Measurement):
             - `y_rms`: Measured beam sizes in vertical direction in [m]
             - `info`: Measurement information for each beamsize measurement
             """
+
 
         self._info = []
         # scan magnet strength and measure beamsize

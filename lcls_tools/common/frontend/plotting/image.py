@@ -25,7 +25,7 @@ def plot_image_projection_fit(result: ImageProjectionFitResult):
     for i, name in enumerate(["x", "y"]):
         fit_params = getattr(result, f"{name}_projection_fit_parameters")
         ax[i + 1].text(0.01, 0.99,
-                       "\n".join([
+                       "Fit params (px)" + "\n".join([
                            f"{name}: {int(val)}" for name, val in
                            fit_params.items()
                        ]),

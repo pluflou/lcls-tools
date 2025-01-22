@@ -1,38 +1,21 @@
+# Built in
+import json
 from unittest import TestCase
-from unittest.mock import patch, Mock, MagicMock
+from unittest.mock import MagicMock
 
 import numpy as np
+import yaml
 
 from lcls_tools.common.devices.magnet import Magnet, MagnetMetadata
-from lcls_tools.common.devices.reader import create_magnet
 from lcls_tools.common.devices.screen import Screen
 from lcls_tools.common.measurements.emittance_measurement import QuadScanEmittance
 from lcls_tools.common.measurements.screen_profile import ScreenBeamProfileMeasurement
 
 
-class EmittanceMeasurementTest(TestCase):
-    def setUp(self) -> None:
-        self.options = [
-            "TRIM",
-            "PERTURB",
-            "BCON_TO_BDES",
-            "SAVE_BDES",
-            "LOAD_BDES",
-            "UNDO_BDES",
-            "DAC_ZERO",
-            "CALIB",
-            "STDZ",
-            "RESET",
-            "TURN_OFF",
-            "TURN_ON",
-            "DEGAUSS",
-        ]
-        self.ctrl_options_patch = patch("epics.PV.get_ctrlvars", new_callable=Mock)
-        self.mock_ctrl_options = self.ctrl_options_patch.start()
-        self.mock_ctrl_options.return_value = {"enum_strs": tuple(self.options)}
-        self.magnet_collection = create_magnet(area="GUNB")
-        return super().setUp()
+# Local imports
 
+
+class EmittanceMeasurementTest(TestCase):
     def test_measure_with_mocked_beamsize_measurement(self):
         """
         Test to verify correct emittance calculation based on data generated from a
@@ -126,3 +109,92 @@ class EmittanceMeasurementTest(TestCase):
              [0.3, -0.3, 0.33333328]]
         ))
         assert np.allclose(results["BMAG"][:, 4], 1.0)
+
+    def test_serialization(self):
+        info = """  
+        OTR11:
+            controls_information:
+              PVs:
+                image: OTRS:LI21:237:IMAGE
+                n_bits: OTRS:LI21:237:N_OF_BITS
+                n_col: OTRS:LI21:237:N_OF_COL
+                n_row: OTRS:LI21:237:N_OF_ROW
+                resolution: OTRS:LI21:237:RESOLUTION
+              control_name: OTRS:LI21:237
+            metadata:
+              area: BC1
+              beam_path:
+              - CU_ALINE
+              - CU_HTXI
+              - CU_HXR
+              - CU_HXTES
+              - CU_SFTH
+              - CU_SXR
+              sum_l_meters: 34.834
+              type: PROF
+        CQ11:
+            controls_information:
+              PVs:
+                bact: QUAD:LI21:221:BACT
+                bcon: QUAD:LI21:221:BCON
+                bctrl: QUAD:LI21:221:BCTRL
+                bdes: QUAD:LI21:221:BDES
+                bmax: QUAD:LI21:221:BMAX
+                bmin: QUAD:LI21:221:BMIN
+                ctrl: QUAD:LI21:221:CTRL
+              control_name: QUAD:LI21:221
+            metadata:
+              area: BC1
+              beam_path:
+              - CU_ALINE
+              - CU_HTXI
+              - CU_HXR
+              - CU_HXTES
+              - CU_SFTH
+              - CU_SXR
+              l_eff: 0.108
+              sum_l_meters: 31.89
+              type: QUAD
+        """
+        config = yaml.safe_load(info)
+        screen = Screen.model_validate(config["OTR11"])
+        magnet = Magnet.model_validate(config["CQ11"])
+
+        beamsize_measurement = ScreenBeamProfileMeasurement(device=screen)
+
+        rmat = np.array([[[1, 1.0], [0, 1]], [[1, 1.0], [0, 1]]])
+        design_twiss = {
+            "beta_x": 0.2452,
+            "alpha_x": -0.1726,
+            "beta_y": 0.5323,
+            "alpha_y": -1.0615,
+        }
+        k = np.linspace(-10, 10, 10)
+
+        quad_scan = QuadScanEmittance(
+            energy=1e9 * 299.792458 / 1e3,
+            scan_values=k,
+            magnet=magnet,
+            beamsize_measurement=beamsize_measurement,
+            n_measurement_shots=1,
+            rmat=rmat,
+            design_twiss=design_twiss,
+            wait_time=1e-3,
+        )
+
+        # check to make sure info is in serialized dump
+        quad_scan_dump = json.loads(quad_scan.model_dump_json())
+        assert quad_scan_dump["scan_values"] == k.tolist()
+        assert quad_scan_dump["magnet"]["controls_information"]["PVs"]["bctrl"] == \
+               "QUAD:LI21:221:BCTRL"
+        assert quad_scan_dump["beamsize_measurement"]["device"][
+            "controls_information"]["PVs"]["image"] == "OTRS:LI21:237:IMAGE"
+        assert "image_processor" in quad_scan_dump["beamsize_measurement"]["beam_fit"]
+        assert quad_scan_dump["rmat"] == [
+            [[1.0, 1.0], [0.0, 1.0]], [[1.0, 1.0], [0.0, 1.0]]
+        ]
+
+        with open('data.yml', 'w') as outfile:
+            yaml.dump(quad_scan_dump, outfile, default_flow_style=False)
+
+

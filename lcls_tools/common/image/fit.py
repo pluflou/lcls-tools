@@ -3,7 +3,7 @@ from typing import Optional, List
 
 import numpy as np
 from numpy import ndarray
-from pydantic import BaseModel, ConfigDict, PositiveFloat, Field
+from pydantic import BaseModel, ConfigDict, PositiveFloat, Field, SerializeAsAny
 
 from lcls_tools.common.data.fit.method_base import MethodBase
 from lcls_tools.common.data.fit.methods import GaussianModel
@@ -57,7 +57,8 @@ class ImageProjectionFit(ImageFit):
     the x/y projections. The default configuration uses a Gaussian fitting of the
     profile with prior distributions placed on the model parameters.
     """
-    projection_fit_method: Optional[MethodBase] = GaussianModel(use_priors=True)
+    projection_fit_method: Optional[SerializeAsAny[MethodBase]] = GaussianModel(
+        use_priors=True)
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def _fit_image(self, image: ndarray) -> ImageProjectionFitResult:

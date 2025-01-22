@@ -1,4 +1,5 @@
-from pydantic import BaseModel, SerializeAsAny, ConfigDict, field_validator
+from pydantic import BaseModel, SerializeAsAny, ConfigDict, field_validator, \
+    field_serializer
 from typing import List, Union, Callable, Dict, Optional
 from epics import PV
 
@@ -8,7 +9,13 @@ class PVSet(BaseModel):
         arbitrary_types_allowed=True,
         extra="forbid",
         frozen=True,
+        json_encoders={PV: lambda pv: pv.pvname}
     )
+
+    @field_serializer("*")
+    def serialize_pv(self, pv: PV, _info):
+        return pv.pvname
+
     ...
 
 
