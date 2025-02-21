@@ -21,7 +21,7 @@ Functions used to analyze data, belongs in the common/data_analysis directory.
 * Try to make your code readable
 * Add comments whenever possible
 * Try your best to adhere to style guidelines set forth in [PEP8](https://www.python.org/dev/peps/pep-0008/)
-  * One of the automated checks for each PR is linting with flake8 and will fail otherwise.
+  * One of the automated checks for each PR is linting with ruff using pre-commit and will fail otherwise. You can locally isntall `pre-commit` and run `pre-commit run --all-files` to adjust files before pushing.
 * Try to be [idiomatic](https://docs.python-guide.org/writing/style).
 * Add tests (unittest is currently used, please use unit tests at a bare minimum)
 * Focus on extensibility (don't put a bunch of modules/classes into one file or directory, if you can avoid it)
