@@ -217,9 +217,9 @@ class Device(BaseModel):
             pv_obj.remove_callback(index)
 
     def scan(
-            self,
-            scan_settings: List[float],
-            function: Optional[callable] = None,
+        self,
+        scan_settings: List[float],
+        function: Optional[callable] = None,
     ) -> None:
         """
         Scans device parameters and calls the provided function after each setting

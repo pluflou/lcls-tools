@@ -29,6 +29,7 @@ class ImageFit(BaseModel, ABC):
     """
     Abstract class for determining beam properties from an image
     """
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def fit_image(self, image: ndarray) -> ImageFitResult:
@@ -55,6 +56,7 @@ class ImageProjectionFit(ImageFit):
     the x/y projections. The default configuration uses a Gaussian fitting of the
     profile with prior distributions placed on the model parameters.
     """
+
     projection_fit_method: Optional[MethodBase] = GaussianModel(use_priors=True)
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

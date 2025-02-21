@@ -105,7 +105,10 @@ class Area(BaseModel):
     @property
     def magnets(
         self,
-    ) -> Union[Dict[str, Magnet], None,]:
+    ) -> Union[
+        Dict[str, Magnet],
+        None,
+    ]:
         """
         A Dict[str, Magnet] for this area, where the dict keys are magnet names.
         If no magnets exist for this area, this property is None.
@@ -119,7 +122,10 @@ class Area(BaseModel):
     @property
     def screens(
         self,
-    ) -> Union[Dict[str, Screen], None,]:
+    ) -> Union[
+        Dict[str, Screen],
+        None,
+    ]:
         """
         A Dict[str, Screen] for this area, where the dict keys are screen names
         If no screens exist for this area, this property is None.
@@ -133,7 +139,10 @@ class Area(BaseModel):
     @property
     def wires(
         self,
-    ) -> Union[Dict[str, Wire], None,]:
+    ) -> Union[
+        Dict[str, Wire],
+        None,
+    ]:
         """
         A Dict[str, Wire] for this area, where the dict keys are wire names
         If no wires exist for this area, this property is None
