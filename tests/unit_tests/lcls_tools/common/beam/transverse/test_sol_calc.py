@@ -5,6 +5,7 @@ from lcls_tools.common.beam.transverse.sol_calc import SolCalc
 class SolCorrectionTest(unittest.TestCase):
     def test_initialization(self):
         """Test initial properties propagate and are gettable"""
+        self.assertEqual(0,1)
         s = SolCalc(0.05, 0.5, 0.1)
         self.assertEqual(s.length, 0.05)
         self.assertEqual(s.gun_energy, 0.5)
