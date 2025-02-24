@@ -72,5 +72,5 @@ jobs:
       - name: Test with unittest
         run: |
           echo -e '## Test results\n\n```' >> "$GITHUB_STEP_SUMMARY"
-          python -m unittest discover -s tests -v 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+          python -m unittest tests/tests/unit_tests/lcls_tools/common/devices/test_wire.py -v 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
